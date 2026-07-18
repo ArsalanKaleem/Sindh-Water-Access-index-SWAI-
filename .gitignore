@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+*.tif
+*.tif.aux.xml
+*.qmd
+gee_upload/
+.DS_Store
+Thumbs.db
