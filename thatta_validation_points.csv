@@ -1,0 +1,22 @@
+sample_code,locality,lat,lon,tds_mgl,chloride_mgl,taste,bacterial
+GH-1,Haji Hotel,24.731456,67.648872,1524,3191.4,Saline,Positive
+GH-2,Gujjo village,24.743082,67.774037,693,212.76,Non-Saline,Positive
+GH-3,Dargah Hazrat Muhammad Ali,24.745577,67.860426,1260,496.44,Non-Saline,Positive
+GH-4,Shaudah Goth,24.735017,67.936705,900,283.68,Non-Saline,Negative
+TH-5,Thatta,24.737260,67.942998,884,354.6,Non-Saline,Positive
+TH-6,Thatta,24.734540,67.943924,718,5035.32,Saline,Negative
+TH-7,Thatta,24.744156,67.950219,1502,212.76,Saline,Positive
+TH-8,Haji Ali Muhammad,24.754517,67.951690,932,141.84,Saline,Positive
+TH-9,Haji Ali,24.763204,67.950916,989,425.52,Saline,Positive
+TH-10,Allah Dino,24.783427,67.935343,694,141.84,Saline,Positive
+TH-11,Allah Dino,24.784182,67.934890,804,283.68,Saline,Negative
+TH-12,Muhammad Khan Roonjho,24.780216,67.929106,981,425.52,Non-Saline,Negative
+TH-13,Allah Dino Barohi,24.777996,67.929050,567,142.84,Non-Saline,Positive
+TH-14,Allah Dino,24.776982,67.928718,1133,1241.1,Saline,Negative
+TH-15,Allah Dino,24.777347,67.928787,1301,996.44,Saline,Negative
+TH-16,Allah Dino,24.776844,67.928993,1401,996.44,Saline,Negative
+TH-17,Gulsher,24.758129,67.939595,1469,1170.18,Saline,Negative
+TH-18,Gulsher,24.758366,67.940020,891,354.6,Saline,Positive
+TH-19,Yaro Maqsai,24.755628,67.942500,846,283.68,Non-Saline,Negative
+TH-20,Yaro Maqsai,24.755472,67.942655,1609,780.12,Saline,Positive
+TH-21,Yaro Maqsai,24.755434,67.943125,998,390.06,Saline,Positive
