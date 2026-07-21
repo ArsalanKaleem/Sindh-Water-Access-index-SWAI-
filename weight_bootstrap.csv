@@ -1,0 +1,26 @@
+district,base_rank,rank_p05,rank_p95,rank_range
+Karachi west,1,1,2,1
+Tando Allahyar,2,1,2,1
+Kashmore,3,3,5,2
+Thatta,4,3,5,2
+Badin,5,4,5,1
+Umerkot,6,6,6,0
+Dadu,7,7,8,1
+Jakobabad,8,7,9,2
+Sanghar,9,9,11,2
+Malir,10,9,12,3
+Mirphurkhas,11,10,13,3
+Larkana,12,10,13,3
+Karachi East,13,8,14,6
+Sukkur,14,13,14,1
+Hyderabad,15,15,19,4
+Khairpur,16,15,18,3
+Jamshoro,17,15,21,6
+Shikarpur,18,16,18,2
+Ghotki,19,16,22,6
+Naushahro Firoz,20,19,21,2
+Nawab Shah,21,17,21,4
+Matiari,22,21,23,2
+Rann of Kutch,23,22,24,2
+Tando M. Khan,24,23,24,1
+Mithi,25,25,25,0
