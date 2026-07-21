@@ -2,8 +2,6 @@
 
 [![DOI](https://zenodo.org/badge/1304539103.svg)](https://doi.org/10.5281/zenodo.21422759)
 
-**Village-level drinking-water accessibility for 5,159 villages...**
-
 **Village-level drinking-water accessibility for 5,159 villages across Sindh, Pakistan — estimated entirely from open satellite and geospatial data.**
 
 ![District ranking](fig2_districts.png)
@@ -25,20 +23,20 @@ SWAI combines five open indicators into a relative 0–100 accessibility score f
 `swai_final.csv` — one row per village (n = 5,159), containing coordinates, all five raw indicators, their normalized forms, the final score, and a band.
 
 
-| Field                   | Description                                        |
-| ----------------------- | -------------------------------------------------- |
-| `village_id`            | Unique identifier (1–5,159)                       |
-| `X`, `Y`                | Longitude, latitude (EPSG:4326)                    |
-| `name`                  | Village name from OpenStreetMap (68 unnamed)       |
-| `river_distance_km`     | Distance to nearest perennial river or canal       |
-| `pop_sum`               | Population within a 2 km radius                    |
-| `rainfall_mm`           | Mean annual precipitation                          |
-| `dry_rain_mm`           | Mean Nov–May precipitation                        |
-| `NDWI`, `NDVI`          | Surface-water and vegetation indices               |
-| `elevation_m`           | Elevation above sea level                          |
-| `R`, `P`, `W`, `N`, `E` | Normalized indicators (0–100)                     |
-| `water_access_score`    | Final composite score (0–100)                     |
-| `band`                  | Poor / Moderate / Good (relative percentile bands) |
+| Field                | Description                                        |
+| -------------------- | -------------------------------------------------- |
+| `village_id`         | Unique identifier (1–5,159)                       |
+| `X`,`Y`              | Longitude, latitude (EPSG:4326)                    |
+| `name`               | Village name from OpenStreetMap (68 unnamed)       |
+| `river_distance_km`  | Distance to nearest perennial river or canal       |
+| `pop_sum`            | Population within a 2 km radius                    |
+| `rainfall_mm`        | Mean annual precipitation                          |
+| `dry_rain_mm`        | Mean Nov–May precipitation                        |
+| `NDWI`,`NDVI`        | Surface-water and vegetation indices               |
+| `elevation_m`        | Elevation above sea level                          |
+| `R`,`P`,`W`,`N`,`E`  | Normalized indicators (0–100)                     |
+| `water_access_score` | Final composite score (0–100)                     |
+| `band`               | Poor / Moderate / Good (relative percentile bands) |
 
 `swai_with_district.csv` adds a district column via spatial join against GADM level 3.
 
@@ -49,13 +47,13 @@ SWAI combines five open indicators into a relative 0–100 accessibility score f
 ### Indicators
 
 
-| Symbol | Indicator                      | Source                                                                                 | Native resolution | Direction       |
-| ------ | ------------------------------ | -------------------------------------------------------------------------------------- | ----------------- | --------------- |
-| **R**  | Distance to perennial water    | HydroRIVERS v1.0 (filtered`DIS_AV_CMS > 1`) merged with OpenStreetMap `waterway=canal` | vector            | Closer = better |
-| **P**  | Population within 2 km         | WorldPop 2024, constrained, UN-adjusted                                                | 100 m             | Fewer = better  |
-| **W**  | Dry-season rainfall (Nov–May) | CHIRPS daily, 2020–2024                                                               | ~5.5 km           | More = better   |
-| **N**  | Surface water (NDWI)           | Sentinel-2 SR Harmonized, 2023 cloud-masked median composite, 1 km buffer mean         | 10–20 m          | More = better   |
-| **E**  | Elevation                      | SRTM 1 Arc-Second (`USGS/SRTMGL1_003`)                                                 | 30 m              | Lower = better  |
+| Symbol | Indicator                      | Source                                                                                | Native resolution | Direction       |
+| ------ | ------------------------------ | ------------------------------------------------------------------------------------- | ----------------- | --------------- |
+| **R**  | Distance to perennial water    | HydroRIVERS v1.0 (filtered`DIS_AV_CMS > 1`) merged with OpenStreetMap`waterway=canal` | vector            | Closer = better |
+| **P**  | Population within 2 km         | WorldPop 2024, constrained, UN-adjusted                                               | 100 m             | Fewer = better  |
+| **W**  | Dry-season rainfall (Nov–May) | CHIRPS daily, 2020–2024                                                              | \~5.5 km          | More = better   |
+| **N**  | Surface water (NDWI)           | Sentinel-2 SR Harmonized, 2023 cloud-masked median composite, 1 km buffer mean        | 10–20 m          | More = better   |
+| **E**  | Elevation                      | SRTM 1 Arc-Second (`USGS/SRTMGL1_003`)                                                | 30 m              | Lower = better  |
 
 ### Normalization
 
@@ -100,20 +98,20 @@ The standard approach — used in most published water-index work — treats **a
 
 Sindh has two distinct rainfall regimes:
 
-- The **monsoon-dominated southeast and coast** receive up to 600 mm annually, but only ~10 mm falls between November and May. The rain arrives in roughly fifteen days of July–August, runs off or evaporates, and by March the ponds are dry.
-- **Western and upper Sindh** receive as little as 120–170 mm annually, but 30–65 mm of it is spread across the dry months, delivered by winter westerly disturbances.
+* The **monsoon-dominated southeast and coast** receive up to 600 mm annually, but only \~10 mm falls between November and May. The rain arrives in roughly fifteen days of July–August, runs off or evaporates, and by March the ponds are dry.
+* **Western and upper Sindh** receive as little as 120–170 mm annually, but 30–65 mm of it is spread across the dry months, delivered by winter westerly disturbances.
 
 Annual rainfall is therefore **inversely related** to dry-season water availability across the province. Dry-season rain averages just **14.5% of the annual total** (range 0.6–39.6%).
 
 ### Consequences
 
 
-|                                                      | Annual rainfall (naive)        | Dry-season rainfall (corrected)  |
-| ---------------------------------------------------- | ------------------------------ | -------------------------------- |
-| **Mithi** (Tharparkar — Pakistan's driest district) | 71.5 —**rank 1 of 25 (best)** | 45.9 —**rank 25 of 25 (worst)** |
-| **Sukkur** (head of the Indus canal command)         | 60.1 — rank 25 (worst)        | 62.9 — rank 14                  |
-| R ↔ W correlation                                   | **−0.62** (indicators cancel) | **+0.34**                        |
-| R's contribution to score                            | 0.07 (inert)                   | 0.77 (dominant)                  |
+|                                                     | Annual rainfall (naive)        | Dry-season rainfall (corrected)  |
+| --------------------------------------------------- | ------------------------------ | -------------------------------- |
+| **Mithi**(Tharparkar — Pakistan's driest district) | 71.5 —**rank 1 of 25 (best)** | 45.9 —**rank 25 of 25 (worst)** |
+| **Sukkur**(head of the Indus canal command)         | 60.1 — rank 25 (worst)        | 62.9 — rank 14                  |
+| R ↔ W correlation                                  | **−0.62**(indicators cancel)  | **+0.34**                        |
+| R's contribution to score                           | 0.07 (inert)                   | 0.77 (dominant)                  |
 
 The naive index also scored **Kharo Chhan (کھارو چھان)** at 85.8/100 — a town in the Indus delta substantially abandoned because seawater intrusion made its water undrinkable.
 
@@ -138,6 +136,20 @@ Mithi ranks worst in five of six variants (21st of 25 in the sixth). **The headl
 
 ---
 
+## Validation (added after initial release)
+
+Three independent checks were run after v1.0:
+
+**Point level — 21 georeferenced groundwater samples** (Zenodo record 15033704, Thatta district). Every sample exceeds the WHO TDS limit of 500 mg/L (range 567–1,609; chloride up to 5,035 mg/L), yet all 21 sit nearest to villages the model rates **"Good"** — mean nearby score 76.5 vs the provincial mean of 62.2. Rank correlations between village score and measured quality are null (ρ = +0.07 for TDS, +0.09 for chloride) because the sampled area spans only ten score points: **uniform high accessibility sitting on uniformly non-potable water.** Script: `swai_thatta_validation.py`; data: `thatta_validation_points.csv`; figure: `fig5_validation_scatter.png`.
+
+**District level — six districts with published percent-unsafe rates** (PCRWR 2021; Solangi et al. 2017). The Spearman correlation between district-mean SWAI score and percent-unsafe is **ρ = +0.72** — *positive*: the districts the model rates most accessible (Thatta 72.9 / 100% unsafe; Badin 72.8 / 92%) are among the least safe. The decoupling holds at a second, unclustered scale. Script: `swai_paper_extras.py`; output: `district_validation.csv`.
+
+**Weight bootstrap — 500 iterations, all weights perturbed ±20%.** Mithi remained the lowest-ranked district in **100% of iterations**; Umerkot's rank never moved; the median district's 90% rank interval spans 2.4 positions. The provincial ordering is a property of the data, not the weights. Output: `weight_bootstrap.csv`.
+
+The two rainfall indicators (annual vs dry-season) correlate at **r = −0.67** — the numerical signature of the two-regime structure driving the inversion (`fig_before_after_inversion.png`).
+
+---
+
 ## Known limitations
 
 These are stated prominently because they matter more than the score.
@@ -154,18 +166,18 @@ P correlates 0.06 with the final score despite a nominal 20% weight. Reversing i
 
 The underlying assumption ("more people = worse access") is also unexamined. Larger settlements often have *better* water infrastructure — piped supply, more handpumps, tanker routes. This direction was inherited uncritically and may simply be wrong.
 
-### 3. No ground-truth validation
+### 3. Validation shows decoupling, not accuracy
 
-Every conclusion rests on the model agreeing with domain expectation. That is a plausibility check, not evidence. **This is the single largest gap.**
+The index has now been checked against independent field data at two scales (see **Validation** below) — but both checks demonstrate the accessibility–potability *decoupling*, not the accuracy of the accessibility scores themselves. No household-level survey of actual water access exists to validate against. The 21-point comparison is also spatially clustered (\~30 km around Thatta town). Field validation of *access* remains the largest remaining gap.
 
 ### 4. Data-specific caveats
 
-- **HydroRIVERS discharge is naturalized** — it models natural flow *before* abstraction. The Indus below Kotri often runs at a fraction of its natural discharge. `DIS_AV_CMS` describes what *would* flow, not what does.
-- **OSM village coverage is incomplete.** Places tagged `hamlet` were excluded; some villages are missing or mislabelled.
-- **The NDWI composite is annual**, averaging monsoon and dry season and smoothing out seasonal water bodies. A dry-season composite would better represent April conditions.
-- **The elevation indicator is weakly justified.** "Lower = better" (nearer water table) is arguable in Sindh, where low-lying also means flood-prone and salinity-affected. It contributes least (ρ = 0.38).
-- **Rainfall is ~5.5 km resolution**, coarse relative to village spacing.
-- One OSM feature had null geometry and was dropped (5,160 → 5,159).
+* **HydroRIVERS discharge is naturalized** — it models natural flow *before* abstraction. The Indus below Kotri often runs at a fraction of its natural discharge. `DIS_AV_CMS` describes what *would* flow, not what does.
+* **OSM village coverage is incomplete.** Places tagged `hamlet` were excluded; some villages are missing or mislabelled.
+* **The NDWI composite is annual**, averaging monsoon and dry season and smoothing out seasonal water bodies. A dry-season composite would better represent April conditions.
+* **The elevation indicator is weakly justified.** "Lower = better" (nearer water table) is arguable in Sindh, where low-lying also means flood-prone and salinity-affected. It contributes least (ρ = 0.38).
+* **Rainfall is \~5.5 km resolution**, coarse relative to village spacing. CHIRPS also systematically underestimates rainfall across the Indus plains and detects only \~20% of dry-season events in hyper-arid zones (Nawaz et al. 2021) — this likely amplifies rather than reverses the seasonal correction, but Tharparkar's dry-season magnitudes should be read as lower bounds.
+* One OSM feature had null geometry and was dropped (5,160 → 5,159).
 
 ---
 
@@ -181,21 +193,21 @@ Filtering HydroRIVERS by discharge was equally consequential. Unfiltered, the me
 
 ### Prerequisites
 
-- Python 3.11+
-- QGIS (Long Term Release)
-- A Google Earth Engine account with a registered Cloud project (Community tier — free)
+* Python 3.11+
+* QGIS (Long Term Release)
+* A Google Earth Engine account with a registered Cloud project (Community tier — free)
 
 ### Data downloads (excluded from this repo)
 
 Large rasters are not committed. Download:
 
 
-| Data                      | Source                                                                                                      |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Administrative boundaries | [gadm.org](https://gadm.org/download_country.html) — Pakistan, shapefile                                   |
-| Villages & canals         | [download.geofabrik.de](https://download.geofabrik.de/asia/pakistan.html) — `pakistan-latest-free.shp.zip` |
-| Population                | [hub.worldpop.org](https://hub.worldpop.org/) — Pakistan 2024, 100 m constrained UN-adjusted               |
-| Rivers                    | [hydrosheds.org](https://www.hydrosheds.org/products/hydrorivers) — HydroRIVERS Asia                       |
+| Data                      | Source                                                                                                    |
+| ------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Administrative boundaries | [gadm.org](https://gadm.org/download_country.html)— Pakistan, shapefile                                  |
+| Villages & canals         | [download.geofabrik.de](https://download.geofabrik.de/asia/pakistan.html)—`pakistan-latest-free.shp.zip` |
+| Population                | [hub.worldpop.org](https://hub.worldpop.org/)— Pakistan 2024, 100 m constrained UN-adjusted              |
+| Rivers                    | [hydrosheds.org](https://www.hydrosheds.org/products/hydrorivers)— HydroRIVERS Asia                      |
 
 Rainfall, NDWI and elevation are computed in Earth Engine — no manual download needed.
 
@@ -207,14 +219,14 @@ pip install -r requirements.txt
 
 **1. GIS preparation (QGIS)**
 
-- Filter GADM level 1 to `"NAME_1" = 'Sindh'` → `sindh_boundary.gpkg`
-- Filter OSM places to `"fclass" = 'village'`, clip to Sindh, add sequential `village_id` → `sindh_villages.gpkg`
-- Clip WorldPop to Sindh, reproject to **EPSG:32642 (UTM 42N)** → `population_utm.tif`
-- Filter HydroRIVERS to `"DIS_AV_CMS" > 1`, reproject → `rivers_perennial.gpkg`
-- Filter OSM waterways to `"fclass" = 'canal'`, clip, reproject → `canals_utm.gpkg`
-- Merge rivers + canals → `water_lines_utm.gpkg`
-- `Join attributes by nearest` (villages → water lines) → export `village_water_distance.csv`
-- Buffer villages by 2000 m → `villages_buffer2km.gpkg`
+* Filter GADM level 1 to `"NAME_1" = 'Sindh'` → `sindh_boundary.gpkg`
+* Filter OSM places to `"fclass" = 'village'`, clip to Sindh, add sequential `village_id` → `sindh_villages.gpkg`
+* Clip WorldPop to Sindh, reproject to **EPSG:32642 (UTM 42N)** → `population_utm.tif`
+* Filter HydroRIVERS to `"DIS_AV_CMS" > 1`, reproject → `rivers_perennial.gpkg`
+* Filter OSM waterways to `"fclass" = 'canal'`, clip, reproject → `canals_utm.gpkg`
+* Merge rivers + canals → `water_lines_utm.gpkg`
+* `Join attributes by nearest` (villages → water lines) → export `village_water_distance.csv`
+* Buffer villages by 2000 m → `villages_buffer2km.gpkg`
 
 > **Reproject to a metric CRS before measuring any distance.** In EPSG:4326 distances come out in degrees and are meaningless.
 
@@ -241,6 +253,8 @@ python district_summary.py     # spatial join, ranking   → swai_with_district.
 python sensitivity.py          # weight robustness
 python figures.py              # figures 1–3
 python make_map.py             # interactive map         → swai_map.html
+python swai_thatta_validation.py  # 21-point validation  → fig5_validation_scatter.png
+python swai_paper_extras.py    # district validation, maps, weight bootstrap
 ```
 
 ---
@@ -320,9 +334,9 @@ Ordered by value, not ease:
 
 **Arsalan Kaleem**
 
-- Portfolio — [arsalankaleem.github.io/portfolio](https://arsalankaleem.github.io/portfolio/)
-- LinkedIn — [linkedin.com/in/arsalankaleem](https://www.linkedin.com/in/arsalankaleem)
-- GitHub — [@ArsalanKaleem](https://github.com/ArsalanKaleem)
-- Email — arsalanabbasi.here@gmail.com
+* Portfolio — [arsalankaleem.github.io/portfolio](https://arsalankaleem.github.io/portfolio/)
+* LinkedIn — [linkedin.com/in/arsalankaleem](https://www.linkedin.com/in/arsalankaleem)
+* GitHub — [@ArsalanKaleem](https://github.com/ArsalanKaleem)
+* Email — arsalanabbasi.here@gmail.com
 
 Feedback, corrections and collaboration are welcome — particularly from anyone with field data on water access or groundwater salinity in Sindh.
