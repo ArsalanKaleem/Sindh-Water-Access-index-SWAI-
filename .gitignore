@@ -3,7 +3,16 @@ __pycache__/
 *.pyc
 *.tif
 *.tif.aux.xml
-*.qmd
-gee_upload/
+*.img
+*.vrt
+# large intermediate geodata - regenerable
+data/*.gpkg
+data/swai_map.html
+# temporary exports
+*.zip
+.vscode/
 .DS_Store
 Thumbs.db
+
+*.qmd
+gee_upload/
