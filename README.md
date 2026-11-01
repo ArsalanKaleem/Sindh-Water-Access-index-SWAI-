@@ -6,7 +6,7 @@
 
 ![District ranking](figures/fig2_districts.png)
 
-**[Open the district explorer](https://arsalankaleem.me/Sindh-Water-Access-index-SWAI-/)**: every village's score on a map, with its five indicators.
+**[Open the district explorer](https://arsalankaleem.github.io/Sindh-Water-Access-index-SWAI-/)**: every village's score on a map, with its five indicators.
 
 ---
 
