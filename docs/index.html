@@ -1,0 +1,1286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SWAI — Drinking-water access in Sindh</title>
+<meta name="description" content="Village-level drinking-water accessibility for 5,159 villages in Sindh, Pakistan, estimated from open satellite and geospatial data. Interactive district explorer.">
+<meta name="author" content="Arsalan Kaleem">
+<meta name="theme-color" content="#f7f8f6">
+<meta property="og:type" content="website">
+<meta property="og:title" content="SWAI — Sindh Water Access Index">
+<meta property="og:description" content="Annual rainfall makes Pakistan's driest district look well served. Explore village-level water access scores across Sindh.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202a'/%3E%3Cpath d='M16 6c4 5 7 8.6 7 12a7 7 0 0 1-14 0c0-3.4 3-7 7-12z' fill='%23f7f8f6'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<style>
+:root{
+  --ink:#14202a;            /* deep river slate */
+  --ink-2:#3f4c56;
+  --paper:#f7f8f6;
+  --panel:#fdfdfc;
+  --sunk:#eef1ef;
+  --rule:#dde3e2;           /* hairline */
+  --rule-2:#c4cdcc;
+  --b0:#9c3b1f;             /* dry earth — Poor, bottom 20% */
+  --b1:#e0a83e;             /* silt — Moderate, below median */
+  --b2:#5fa2c4;             /* shallow water — Moderate, above median */
+  --b3:#1f5f8b;             /* deep water — Good, top 20% */
+  --sky:#1f5f8b;
+  --sky-soft:#e3eef5;
+  --naive:#c0708a;          /* annual-rainfall (naive) score */
+  --sample:#6b3fa0;         /* groundwater samples */
+  --muted:#6c7781;
+  --warn:#8a4b12;
+  --radius:10px;
+  --shadow:0 1px 2px rgba(20,32,42,.05),0 8px 24px -12px rgba(20,32,42,.2);
+  --head:60px;
+  --gutter:16px;
+  --serif:Newsreader,Georgia,serif;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media(min-width:720px){:root{--gutter:32px}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--paper);
+  font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3{font-family:var(--serif);font-weight:500;margin:0;letter-spacing:-.01em}
+p{margin:0}
+a{color:var(--sky)}
+img,svg{display:block}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:1200px;margin:0 auto;padding:0 var(--gutter)}
+section{scroll-margin-top:calc(var(--head) + 8px)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;
+  font:500 15px/1 var(--sans);border-radius:999px;border:1px solid var(--rule-2);background:var(--panel);
+  color:var(--ink);text-decoration:none;cursor:pointer;transition:background .15s,border-color .15s,transform .15s;white-space:nowrap}
+.btn:hover{border-color:var(--ink-2);background:#fff}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.btn.primary:hover{background:#000}
+.btn.sm{min-height:36px;padding:0 14px;font-size:13.5px}
+.btn svg{width:16px;height:16px;flex:none}
+
+/* ---------- header ---------- */
+.site-head{position:sticky;top:0;z-index:50;height:var(--head);
+  background:rgba(247,248,246,.86);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);
+  border-bottom:1px solid var(--rule)}
+.site-head .wrap{height:100%;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;min-width:0}
+.brand-mark{width:30px;height:30px;border-radius:7px;background:var(--ink);display:grid;place-items:center;flex:none}
+.brand-txt{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.brand-txt b{font-family:var(--mono);font-size:14px;letter-spacing:.06em;font-weight:600}
+.brand-txt span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav{display:flex;align-items:center;gap:4px}
+.nav a.lnk{font-size:14px;color:var(--ink-2);text-decoration:none;padding:8px 12px;border-radius:999px}
+.nav a.lnk:hover{background:var(--sunk);color:var(--ink)}
+.icon-btn{width:40px;height:40px;display:grid;place-items:center;border-radius:999px;color:var(--ink);border:1px solid transparent}
+.icon-btn:hover{background:var(--sunk)}
+.icon-btn svg{width:20px;height:20px}
+@media(max-width:879px){.nav a.lnk{display:none}}
+@media(max-width:420px){.brand-txt span{display:none}}
+
+/* ---------- hero ---------- */
+.hero{padding:44px 0 36px;border-bottom:1px solid var(--rule);
+  background:
+    radial-gradient(1200px 420px at 85% -10%,rgba(31,95,139,.10),transparent 60%),
+    radial-gradient(900px 380px at -10% 110%,rgba(156,59,31,.07),transparent 60%)}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:36px;align-items:center}
+/* grid children may hold nowrap text; let them shrink below their min-content width */
+.hero-grid>*,.cite-grid>*,.method>*,.findings>*,.tiers>*,.foot-grid>*,.inds>*{min-width:0}
+@media(min-width:960px){.hero{padding:72px 0 64px}.hero-grid{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:56px}}
+.badges{display:flex;flex-wrap:wrap;gap:8px}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;border:1px solid var(--rule);
+  background:var(--panel);border-radius:999px;font-size:13px;color:var(--ink-2);text-decoration:none;max-width:100%}
+a.badge:hover{border-color:var(--rule-2)}
+.badge .pill{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;background:var(--sky);color:#fff;padding:3px 8px;border-radius:999px;flex:none}
+.badge .pill.review{background:#fbeed3;color:#7a4a08}
+.badge .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero h1{font-size:clamp(34px,6.4vw,58px);line-height:1.04;margin:20px 0 18px;letter-spacing:-.022em}
+.hero h1 em{font-style:italic;color:var(--sky)}
+.hero .lede{font-size:clamp(17px,2.1vw,19.5px);line-height:1.55;color:var(--ink-2);max-width:40em}
+.hero .lede b{color:var(--ink);font-weight:600}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+@media(max-width:479px){.cta .btn{flex:1 1 100%}}
+
+/* inversion card */
+.inv{position:relative;background:#fff;border:1px solid var(--rule);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:24px 22px 18px;overflow:hidden}
+.inv::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:linear-gradient(90deg,var(--b0),var(--b1),var(--b2),var(--b3))}
+.inv h2{font-size:21px;line-height:1.25;margin:10px 0 6px}
+.inv .sub{font-size:13.5px;color:var(--muted);margin-bottom:16px}
+.inv-key{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);margin-bottom:12px}
+.inv-key span{display:flex;align-items:center;gap:6px}
+.pt{width:11px;height:11px;border-radius:50%;flex:none}
+.pt.naive{background:#fff;border:2px solid var(--naive)}
+.pt.dry{background:var(--sky)}
+.inv-rows{display:grid;gap:10px}
+.inv-row{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center}
+.inv-row .nm{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inv-row .nm b{font-weight:600}
+.track{position:relative;height:22px}
+.track::before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px dashed var(--rule-2)}
+.track .seg-l{position:absolute;top:50%;height:3px;margin-top:-1.5px;border-radius:2px;opacity:.55}
+.track .pt{position:absolute;top:50%;transform:translate(-50%,-50%)}
+.track .lab{position:absolute;top:-3px;font-family:var(--mono);font-size:10.5px;color:var(--muted);transform:translateX(-50%)}
+.axis{display:grid;grid-template-columns:110px 1fr;gap:12px;margin-top:6px}
+.axis div{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.inv-foot{margin-top:14px;padding-top:12px;border-top:1px dashed var(--rule);font-size:13px;color:var(--ink-2)}
+.skel{height:180px;display:grid;place-items:center;color:var(--muted);font-family:var(--mono);font-size:12px}
+
+/* ---------- section heads ---------- */
+.sec{padding:56px 0}
+@media(min-width:960px){.sec{padding:80px 0}}
+.sec-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:28px}
+.sec-head h2{font-size:clamp(28px,4vw,38px);line-height:1.1;margin-top:10px}
+.sec-head p{color:var(--ink-2);max-width:36em;font-size:16px}
+
+/* ---------- findings ---------- */
+.findings{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:560px){.findings{grid-template-columns:1fr 1fr}}
+@media(min-width:1100px){.findings{grid-template-columns:repeat(4,1fr)}}
+.fcard{background:var(--panel);border:1px solid var(--rule);border-radius:var(--radius);padding:22px 20px;display:flex;flex-direction:column;gap:10px}
+.fcard .n{font-family:var(--mono);font-size:clamp(34px,4.4vw,42px);line-height:1;font-weight:500;letter-spacing:-.03em}
+.fcard .n.pair{font-size:clamp(26px,2.5vw,32px);padding:.12em 0}
+.fcard .n small{font-size:.5em;color:var(--muted);letter-spacing:0;font-weight:400}
+.fcard .n .arr{color:var(--muted);font-size:.6em;margin:0 .15em}
+.fcard p{font-size:14.5px;color:var(--ink-2);line-height:1.5}
+.fcard .src{margin-top:auto;padding-top:10px;border-top:1px dashed var(--rule);font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.02em}
+.note{margin-top:18px;font-size:14px;color:var(--muted);max-width:60em}
+
+/* ---------- explorer ---------- */
+.explore-sec{background:var(--sunk);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.explorer{display:grid;grid-template-columns:400px 1fr;height:min(900px,calc(100dvh - var(--head) - 48px));min-height:640px;
+  background:var(--panel);border:1px solid var(--rule);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.side{border-right:1px solid var(--rule);overflow-y:auto;display:flex;flex-direction:column;overscroll-behavior:contain}
+.pad{padding:18px 20px}
+.ctrl{border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:14px}
+label.fld,.fld{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.fld-hint{font-size:12px;color:var(--muted);margin-top:6px}
+.select{position:relative}
+.select::after{content:"";position:absolute;right:14px;top:50%;width:8px;height:8px;border-right:1.5px solid var(--ink-2);border-bottom:1.5px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+select,input[type=search]{width:100%;min-height:46px;padding:10px 14px;font:inherit;font-size:16px;
+  border:1px solid var(--rule-2);border-radius:8px;background:#fff;color:var(--ink);-webkit-appearance:none;appearance:none}
+select{padding-right:38px;font-weight:500}
+input[type=search]{padding-left:40px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236c7781' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 14px 50%}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--sunk);border:1px solid var(--rule);border-radius:9px;padding:3px;gap:3px}
+.seg3{grid-template-columns:repeat(3,1fr)}
+.seg button{font:500 13.5px/1.2 var(--sans);min-height:40px;padding:6px 8px;border:0;border-radius:7px;background:transparent;color:var(--ink-2);cursor:pointer}
+.seg button[aria-pressed=true]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(20,32,42,.12),0 0 0 1px var(--rule)}
+.tool-row{display:flex;flex-wrap:wrap;gap:8px}
+.tool-row .btn{flex:1 1 auto;border-radius:8px;min-height:40px;font-size:13.5px;padding:0 10px}
+.tool-row .btn[aria-pressed=true]{background:var(--sky-soft);border-color:var(--sky);color:var(--sky)}
+
+/* headline readout */
+.readout{border-bottom:1px solid var(--rule);background:
+  repeating-linear-gradient(180deg,transparent 0 27px,rgba(221,227,226,.5) 27px 28px),var(--panel)}
+.readout .lede{font-family:var(--serif);font-size:18px;line-height:1.4;margin:0 0 12px}
+.big{font-family:var(--mono);font-size:52px;line-height:1;font-weight:500;letter-spacing:-.035em}
+.big small{font-size:15px;letter-spacing:0;color:var(--muted);margin-left:6px;font-weight:400}
+.readout .sub{font-size:13px;color:var(--muted);margin-top:8px}
+.dist-h{margin-top:16px;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.dist{display:flex;height:12px;border-radius:6px;overflow:hidden;margin-top:7px;background:var(--rule);gap:2px}
+.dist span{height:100%}
+.dist-l{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:8px;font-size:12.5px;color:var(--ink-2)}
+.dist-l span{display:flex;align-items:center}
+.dist-l b{margin-left:auto;font-weight:500;color:var(--ink)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:8px;overflow:hidden;margin-top:16px}
+.stat{background:var(--panel);padding:11px 12px}
+.stat .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font-family:var(--mono);font-size:20px;margin-top:3px;font-weight:500}
+.stat .v small{font-size:12px;color:var(--muted);font-weight:400}
+.flag{margin:16px 0 0;padding:11px 13px;border-left:3px solid var(--warn);background:#fdf3e6;border-radius:0 6px 6px 0;font-size:13px;line-height:1.5;color:#5c3d16}
+.flag.info{border-left-color:var(--sky);background:var(--sky-soft);color:#173d57}
+.flag b{font-weight:600}
+
+/* village list */
+.list{display:flex;flex-direction:column}
+.listhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:18px 20px 10px}
+.listhead h3{font-size:17px}
+.listhead .count{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.list .search{padding:0 20px 10px}
+.rows{padding:0 10px 8px}
+.row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;width:100%;text-align:left;font:inherit;color:inherit;
+  min-height:48px;padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent;background:none}
+.row:hover,.row:focus-visible{background:var(--sunk);border-color:var(--rule);outline:none}
+.row .nm{display:block;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .pp{display:block;font-size:12px;color:var(--muted);padding-left:16px}
+.row .tt{font-family:var(--mono);font-size:15px;font-weight:500;text-align:right}
+.row .tt span{font-size:10.5px;color:var(--muted);font-weight:400}
+.empty{padding:14px 10px;color:var(--muted);font-size:14px}
+.more{margin:4px 20px 20px}
+.more .btn{width:100%;border-radius:8px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:1px;flex:none}
+.side-foot{margin-top:auto;padding:16px 20px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--muted);line-height:1.55}
+.side-foot b{color:var(--ink-2);font-weight:600}
+
+/* map */
+#map{position:relative;min-height:0;background:#e6eae9}
+.legend{position:absolute;left:12px;bottom:12px;z-index:2;background:rgba(253,253,252,.94);
+  border:1px solid var(--rule);border-radius:8px;padding:10px 12px;font-size:12.5px;max-width:260px;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:var(--shadow)}
+.legend .t{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.legend .t .hint{text-transform:none;letter-spacing:0;font-family:var(--sans)}
+.legend .ks{display:grid;grid-template-columns:auto;gap:3px}
+.legend .k{display:flex;align-items:center;white-space:nowrap}
+.legend .k .rng{margin-left:auto;padding-left:12px;font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.band{font:inherit;color:inherit;background:none;border:0;padding:3px 4px;margin:-1px -4px;border-radius:5px;cursor:pointer;text-align:left}
+.band:hover{background:var(--sunk)}
+.band[aria-pressed=false]{opacity:.38;text-decoration:line-through}
+.ramp-key{display:none;width:200px}
+.legend.mode-ramp .ramp-key{display:block}
+.legend.mode-ramp .ks{display:none}
+.ramp{height:10px;border-radius:5px;background:linear-gradient(90deg,var(--b0),var(--b1),var(--b2),var(--b3))}
+.ramp.heat{background:linear-gradient(90deg,rgba(224,168,62,.25),var(--b1),var(--b0),#4a1408)}
+.ramp-l{display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--muted)}
+.extra{margin-top:8px;padding-top:8px;border-top:1px solid var(--rule);display:grid;gap:3px;font-size:11.5px;color:var(--muted)}
+.extra .k{display:flex;align-items:center}
+.ring{display:inline-block;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--sample);margin-right:8px;flex:none}
+.dash{width:18px;margin-right:8px;border-top:1.5px dashed var(--ink-2)}
+.samp-key{display:none}
+.legend.show-samples .samp-key{display:flex}
+.legend .scn{margin-top:6px;font-family:var(--mono);font-size:10.5px;color:var(--sky)}
+.ctl-btn{display:grid!important;place-items:center}
+.ctl-btn svg{width:17px;height:17px;color:var(--ink)}
+.ctl-btn[aria-pressed=true]{background:var(--sky-soft)!important}
+.maplibregl-popup-content{font-family:var(--sans);font-size:13px;padding:12px 14px;border-radius:8px;box-shadow:var(--shadow)}
+.maplibregl-popup-close-button{font-size:18px;width:28px;height:28px}
+.hover-tip .maplibregl-popup-content{padding:6px 10px;font-size:12.5px;pointer-events:none}
+.hover-tip .maplibregl-popup-tip{display:none}
+.pop-n{font-family:var(--serif);font-size:16px;margin:0 18px 6px 0;line-height:1.25}
+.pop-s{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.pop-s .mono{font-size:22px;font-weight:500}
+.pop-s .tag{font-size:11.5px;padding:2px 8px;border-radius:999px;color:#fff}
+.pop-r{display:flex;justify-content:space-between;gap:18px;font-size:12.5px;padding:3px 0;border-top:1px solid var(--rule)}
+.pop-r .mono{font-weight:500}
+.ibars{display:grid;gap:4px;margin:8px 0}
+.ibar{display:grid;grid-template-columns:18px 1fr 26px;gap:8px;align-items:center;font-size:11.5px}
+.ibar b{font-family:var(--mono);font-weight:600;color:var(--ink-2)}
+.ibar i{display:block;height:6px;border-radius:3px;background:var(--sunk);position:relative;overflow:hidden}
+.ibar i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--w);background:var(--c)}
+.ibar span{font-family:var(--mono);text-align:right;color:var(--ink-2)}
+.pop-cap{font-size:11px;color:var(--muted);margin-bottom:2px}
+.map-note{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;width:min(320px,80%);
+  background:var(--panel);border:1px solid var(--rule);border-radius:8px;box-shadow:var(--shadow);
+  padding:12px 14px;font-size:13.5px;line-height:1.45;text-align:center;color:var(--ink-2)}
+.loading{position:absolute;inset:0;display:grid;place-items:center;background:var(--paper);z-index:5;font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.08em;text-align:center;padding:20px}
+
+/* explorer on phones and tablets: one column, controls → readout → map → list */
+@media(max-width:899px){
+  .explorer{display:flex;flex-direction:column;height:auto;min-height:0}
+  .side{display:contents}
+  .ctrl{order:1}
+  .readout{order:2}
+  #map{order:3;height:min(68dvh,560px);min-height:380px;border-bottom:1px solid var(--rule)}
+  .list{order:4}
+  .side-foot{order:5}
+  .big{font-size:46px}
+  .legend{left:8px;top:8px;bottom:auto;padding:8px 10px;font-size:11.5px;max-width:210px}
+  .legend .extra{display:none}
+}
+
+/* ---------- method ---------- */
+.inds{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:620px){.inds{grid-template-columns:1fr 1fr}}
+@media(min-width:1000px){.inds{grid-template-columns:repeat(5,1fr)}}
+.ind{background:var(--panel);border:1px solid var(--rule);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:8px}
+.ind .top{display:flex;align-items:center;justify-content:space-between}
+.ind .sym{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;font-family:var(--mono);font-weight:600;color:#fff;background:var(--sky)}
+.ind .wt{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.ind h3{font-size:18px;line-height:1.25}
+.ind p{font-size:13.5px;color:var(--ink-2)}
+.ind .dir{margin-top:auto;font-size:12px;color:var(--muted);font-family:var(--mono)}
+.formula{margin-top:20px;display:grid;gap:16px;align-items:center;background:var(--ink);color:#e9eef0;border-radius:var(--radius);padding:22px}
+@media(min-width:860px){.formula{grid-template-columns:auto 1fr;gap:32px}}
+.formula pre{margin:0;font-family:var(--mono);font-size:clamp(14px,1.7vw,17px);line-height:1.8;color:#fff;white-space:pre-wrap}
+.formula pre .c{color:#8fbdd3}
+.formula p{font-size:15px;color:#c7d2d6;max-width:46em}
+.tiers{display:grid;gap:12px;margin-top:40px}
+@media(min-width:820px){.tiers{grid-template-columns:repeat(3,1fr)}}
+.tier{background:var(--panel);border:1px solid var(--rule);border-radius:var(--radius);padding:22px 20px}
+.tier .st{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:999px;margin-bottom:14px}
+.tier .st::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.st.yes{color:var(--b3);background:#e3eef5}
+.st.part{color:#8a6a0d;background:#f8f0d6}
+.st.no{color:var(--b0);background:#f6e5dc}
+.tier h3{font-size:21px;margin-bottom:6px}
+.tier .q{font-family:var(--serif);font-style:italic;color:var(--ink-2);margin-bottom:10px}
+.tier p{font-size:14.5px;color:var(--ink-2)}
+.limits{margin:28px 0 0;padding:0;list-style:none;display:grid;gap:10px;max-width:60em}
+.limits li{font-size:15px;color:var(--ink-2);padding-left:20px;position:relative}
+.limits li::before{content:"";position:absolute;left:2px;top:.7em;width:8px;height:1.5px;background:var(--rule-2)}
+.limits b{color:var(--ink);font-weight:600}
+
+/* ---------- cite ---------- */
+.cite-sec{background:var(--ink);color:#e9eef0}
+.cite-sec .eyebrow{color:#93a1aa}
+.cite-sec .sec-head p{color:#c7d2d6}
+.cite-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:28px}
+@media(min-width:960px){.cite-grid{grid-template-columns:.9fr 1.1fr;gap:48px;align-items:start}}
+.review{border:1px dashed #4a5a65;border-radius:var(--radius);padding:18px;display:flex;gap:14px;align-items:flex-start}
+.review svg{width:22px;height:22px;flex:none;color:#e0a83e;margin-top:2px}
+.review b{display:block;font-weight:600;color:#fff;margin-bottom:4px}
+.review p{font-size:14.5px;color:#c7d2d6}
+.abs{font-family:var(--serif);font-size:19px;line-height:1.55;color:#e9eef0;margin-top:22px}
+.ref-list{margin-top:24px;display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.ref{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border:1px solid #33424c;border-radius:8px;color:#e9eef0;text-decoration:none;transition:border-color .15s,background .15s}
+.ref:hover{border-color:#5d6f7a;background:#1b2b36}
+.ref .l{display:flex;flex-direction:column;min-width:0}
+.ref .l b{font-weight:500;font-size:15px}
+.ref .l span{font-size:12.5px;color:#93a1aa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ref svg{width:18px;height:18px;flex:none;color:#93a1aa}
+.cbox{background:#1b2b36;border:1px solid #33424c;border-radius:var(--radius);overflow:hidden}
+.ctabs{display:flex;border-bottom:1px solid #33424c;overflow-x:auto;scrollbar-width:none}
+.ctabs::-webkit-scrollbar{display:none}
+.ctabs button{font:500 13.5px var(--sans);color:#93a1aa;background:none;border:0;padding:14px 16px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;min-height:48px}
+.ctabs button[aria-selected=true]{color:#fff;border-bottom-color:var(--b2)}
+.ctext{margin:0;padding:20px;font-family:var(--serif);font-size:16.5px;line-height:1.6;color:#e9eef0;white-space:pre-wrap;word-break:break-word;min-height:150px}
+.ctext.code{font-family:var(--mono);font-size:12.5px;line-height:1.65;white-space:pre;overflow-x:auto;word-break:normal}
+.cfoot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-top:1px solid #33424c}
+.cfoot span{font-size:12.5px;color:#93a1aa}
+.copy{background:#e9eef0;color:var(--ink);border-color:#e9eef0}
+.copy:hover{background:#fff;border-color:#fff}
+.code-cite{margin-top:16px;font-size:13.5px;color:#93a1aa;line-height:1.55}
+.code-cite a{color:#c9d6dc}
+
+/* ---------- footer ---------- */
+.site-foot{background:#0d161d;color:#93a1aa;font-size:13.5px;padding:36px 0 calc(36px + env(safe-area-inset-bottom))}
+.foot-grid{display:grid;gap:24px}
+@media(min-width:820px){.foot-grid{grid-template-columns:1.3fr 1fr 1fr}}
+.site-foot h4{margin:0 0 10px;font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:#6d7c86;font-weight:500}
+.site-foot a{color:#c9d6dc;text-decoration-color:#4a5a65}
+.site-foot a:hover{color:#fff}
+.site-foot p+p{margin-top:6px}
+.foot-base{margin-top:28px;padding-top:18px;border-top:1px solid #1f2c35;display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between;font-size:12.5px}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px;font-size:14px;transition:opacity .2s,transform .2s;z-index:100;max-width:calc(100% - 32px);text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="SWAI home">
+      <span class="brand-mark" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 1.5c2.4 3 4.5 5.3 4.5 7.5a4.5 4.5 0 0 1-9 0c0-2.2 2.1-4.5 4.5-7.5z" fill="#f7f8f6"/></svg></span>
+      <span class="brand-txt"><b>SWAI</b><span>Sindh Water Access Index</span></span>
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a class="lnk" href="#findings">Findings</a>
+      <a class="lnk" href="#explore">Explorer</a>
+      <a class="lnk" href="#method">Method</a>
+      <a class="lnk" href="#cite">Cite</a>
+      <a class="btn sm primary" href="https://doi.org/10.5281/zenodo.21422759" target="_blank" rel="noopener">Get the data</a>
+      <a class="icon-btn" href="https://github.com/ArsalanKaleem/Sindh-Water-Access-index-SWAI-" target="_blank" rel="noopener" aria-label="Source code on GitHub">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ================= hero ================= -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="badges">
+        <span class="badge"><span class="pill review">Under review</span><span class="t">Paper submitted for publication</span></span>
+        <a class="badge" href="https://doi.org/10.5281/zenodo.21422759" target="_blank" rel="noopener"><span class="pill">DOI</span><span class="t">10.5281/zenodo.21422759</span></a>
+      </div>
+      <h1>Where is water hardest to reach in <em>Sindh?</em></h1>
+      <p class="lede">A drinking-water access score for <b>5,159 villages</b>, built only from open satellite and geospatial data. The usual way of building such an index <b>turns the ranking upside down</b>, making Pakistan's driest district look well served.</p>
+      <div class="cta">
+        <a class="btn primary" href="#explore">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>
+          Explore the map</a>
+        <a class="btn" href="https://doi.org/10.5281/zenodo.21422759" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+          Dataset on Zenodo</a>
+        <a class="btn" href="#method">How it works</a>
+      </div>
+    </div>
+
+    <article class="inv" aria-label="How the choice of rainfall measure changes district scores">
+      <div class="eyebrow">The inversion</div>
+      <h2>One choice flips the ranking</h2>
+      <p class="sub">District mean scores with annual rainfall versus dry-season rainfall (Nov–May).</p>
+      <div class="inv-key"><span><i class="pt naive"></i>Annual rainfall</span><span><i class="pt dry"></i>Dry-season rainfall</span></div>
+      <div id="invRows"><div class="skel">Loading districts…</div></div>
+      <div class="inv-foot" id="invFoot"></div>
+    </article>
+  </div>
+</section>
+
+<!-- ================= findings ================= -->
+<section class="sec" id="findings">
+  <div class="wrap">
+    <div class="sec-head">
+      <div><div class="eyebrow">Key findings</div><h2>Annual rain hides the dry months</h2></div>
+      <p>Most published water indices treat annual rainfall as supply. In Sindh the monsoon falls in a few weeks of July and August and is gone by March, so annual totals point the wrong way.</p>
+    </div>
+    <div class="findings">
+      <div class="fcard">
+        <div class="n pair">71.5<span class="arr">→</span>45.9</div>
+        <p>Mithi (Tharparkar), Pakistan's driest district: near the top with annual rainfall, last of 25 with dry-season rainfall.</p>
+        <div class="src">Last in every one of 500 weight bootstraps</div>
+      </div>
+      <div class="fcard">
+        <div class="n">14.5<small>%</small></div>
+        <p>Average share of a village's annual rain that falls between November and May. The range runs from 0.6% to 39.6%.</p>
+        <div class="src">Annual vs dry-season indicators: r = −0.67</div>
+      </div>
+      <div class="fcard">
+        <div class="n">88.6<small>%</small></div>
+        <p>Villages whose nearest perennial water is a canal, not a natural river. Natural hydrography alone misses nine villages in ten.</p>
+        <div class="src">4,573 canals vs 586 rivers</div>
+      </div>
+      <div class="fcard">
+        <div class="n"><small>ρ</small> +0.72</div>
+        <p>Districts scored most accessible are among the least safe. Thatta scores 72.9, yet every published water sample there was unsafe.</p>
+        <div class="src">6 districts · PCRWR 2021; Solangi et al. 2017</div>
+      </div>
+    </div>
+    <p class="note">Accessibility is not potability. The index has no salinity data, so the coastal delta, where seawater has spoiled groundwater, scores well.</p>
+  </div>
+</section>
+
+<!-- ================= explorer ================= -->
+<section class="sec explore-sec" id="explore">
+  <div class="wrap">
+    <div class="sec-head">
+      <div><div class="eyebrow">District explorer</div><h2>Look up a district</h2></div>
+      <p>Scores are relative within Sindh, from 0 to 100. Tap a village for its five indicators, or switch to annual rainfall to see the inversion.</p>
+    </div>
+
+    <div class="explorer">
+      <aside class="side">
+        <div class="ctrl pad">
+          <div>
+            <label class="fld" for="district">District</label>
+            <div class="select"><select id="district"></select></div>
+            <div class="fld-hint">Ordered by mean score, lowest first</div>
+          </div>
+          <div>
+            <span class="fld" id="scnLbl">Rainfall measure</span>
+            <div class="seg" role="group" aria-labelledby="scnLbl">
+              <button type="button" data-scn="dry" aria-pressed="true">Dry season (used)</button>
+              <button type="button" data-scn="annual" aria-pressed="false">Annual (naive)</button>
+            </div>
+          </div>
+          <div>
+            <span class="fld" id="viewLbl">Map view</span>
+            <div class="seg seg3" role="group" aria-labelledby="viewLbl">
+              <button type="button" data-view="dots" aria-pressed="true">Villages</button>
+              <button type="button" data-view="hex" aria-pressed="false">Hexagons</button>
+              <button type="button" data-view="heat" aria-pressed="false">Heatmap</button>
+            </div>
+            <div class="fld-hint" id="viewHint"></div>
+          </div>
+          <div>
+            <label class="fld" for="colorBy">Colour villages by</label>
+            <div class="select"><select id="colorBy">
+              <option value="score">Water access score</option>
+              <option value="R">R · Distance to river or canal</option>
+              <option value="W">W · Rainfall</option>
+              <option value="N">N · Surface water (NDWI)</option>
+              <option value="P">P · Population within 2 km</option>
+              <option value="E">E · Elevation</option>
+            </select></div>
+          </div>
+          <div class="tool-row">
+            <button type="button" class="btn" id="toggleSamples" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3c3 4 6 7 6 10.5a6 6 0 0 1-12 0C6 10 9 7 12 3z"/></svg>
+              <span>Groundwater samples</span></button>
+            <button type="button" class="btn" id="download">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>
+              District CSV</button>
+          </div>
+        </div>
+
+        <div class="readout pad" id="readout" aria-live="polite"></div>
+
+        <div class="list">
+          <div class="listhead">
+            <h3>Villages, lowest score first</h3>
+            <span class="count" id="vcount"></span>
+          </div>
+          <div class="search">
+            <input type="search" id="search" placeholder="Find a village by name" aria-label="Find a village by name" autocomplete="off">
+          </div>
+          <div class="rows" id="rows"></div>
+          <div class="more" id="more" hidden><button type="button" class="btn" id="moreBtn">Show more</button></div>
+        </div>
+
+        <div class="side-foot">
+          <p><b>What this measures.</b> How accessible drinking water is likely to be, relative to other villages in Sindh. Not whether the water is safe to drink.</p>
+          <p id="metaline" style="margin-top:6px"></p>
+        </div>
+      </aside>
+
+      <div id="map" role="region" aria-label="Map of village water access scores">
+        <div class="loading" id="loading">Loading villages…</div>
+        <div class="map-note" id="mapNote" role="status" hidden></div>
+        <div class="legend" id="legend">
+          <div class="t" id="legT"></div>
+          <div class="ks" id="legBands"></div>
+          <div class="ramp-key" aria-hidden="true"><div class="ramp" id="legRamp"></div><div class="ramp-l"><span id="legLo"></span><span id="legHi"></span></div></div>
+          <div class="extra">
+            <div class="k samp-key"><span class="ring"></span>Groundwater sample, Thatta</div>
+            <div class="k"><span class="dash"></span>Area of mapped villages</div>
+          </div>
+          <div class="scn" id="legScn">Dry-season rainfall · as published</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= method ================= -->
+<section class="sec" id="method">
+  <div class="wrap">
+    <div class="sec-head">
+      <div><div class="eyebrow">Method</div><h2>Five open indicators, one score</h2></div>
+      <p>Each indicator is log-transformed where skewed, winsorised at the 1st and 99th percentiles, and rescaled to 0–100 so that higher always means better access.</p>
+    </div>
+
+    <div class="inds">
+      <div class="ind">
+        <div class="top"><span class="sym">R</span><span class="wt">in S · 45%</span></div>
+        <h3>Distance to perennial water</h3>
+        <p>HydroRIVERS (discharge over 1 m³/s) merged with OpenStreetMap canals.</p>
+        <div class="dir">closer = better</div>
+      </div>
+      <div class="ind">
+        <div class="top"><span class="sym">W</span><span class="wt">in S · 45%</span></div>
+        <h3>Dry-season rainfall</h3>
+        <p>CHIRPS daily rainfall, November–May, averaged over 2020–2024.</p>
+        <div class="dir">more = better</div>
+      </div>
+      <div class="ind">
+        <div class="top"><span class="sym">N</span><span class="wt">20%</span></div>
+        <h3>Surface water</h3>
+        <p>Sentinel-2 NDWI, 2023 cloud-masked median, mean within 1 km.</p>
+        <div class="dir">more = better</div>
+      </div>
+      <div class="ind">
+        <div class="top"><span class="sym">P</span><span class="wt">20%</span></div>
+        <h3>Population within 2 km</h3>
+        <p>WorldPop 2024, constrained and UN-adjusted, 100 m grid.</p>
+        <div class="dir">fewer = better</div>
+      </div>
+      <div class="ind">
+        <div class="top"><span class="sym">E</span><span class="wt">15%</span></div>
+        <h3>Elevation</h3>
+        <p>SRTM 1 arc-second. Lower ground sits nearer the water table.</p>
+        <div class="dir">lower = better</div>
+      </div>
+    </div>
+
+    <div class="formula">
+<pre>S     = max(R, W)
+Score = 0.45·S + 0.20·P
+      + 0.20·N + 0.15·E   <span class="c">// 0–100</span></pre>
+      <p>Rivers or canals and rainfall are substitutes, not complements. A canal past the village makes rain matter less; in the Thar desert, with no canal, rain is everything. Taking the better of the two avoids penalising either kind of village. Bands are percentiles: Poor is the bottom 20%, Good the top 20%.</p>
+    </div>
+
+    <div class="tiers">
+      <div class="tier">
+        <span class="st yes">Answered</span>
+        <h3>Accessible</h3>
+        <div class="q">Is water likely within reach?</div>
+        <p>A relative score per village. District rankings hold across weighting choices (Spearman ρ 0.84–0.96).</p>
+      </div>
+      <div class="tier">
+        <span class="st no">Not answered</span>
+        <h3>Safe to drink</h3>
+        <div class="q">Is the water potable?</div>
+        <p>There is no salinity data. Thatta and Badin rank near the top, yet that is where seawater intrusion has made groundwater undrinkable.</p>
+      </div>
+      <div class="tier">
+        <span class="st part">Partly</span>
+        <h3>Checked on the ground</h3>
+        <div class="q">Does the score match reality?</div>
+        <p>21 groundwater samples near Thatta all exceed 500 mg/L TDS beside villages rated Good. The checks show the access–safety gap, not score accuracy.</p>
+      </div>
+    </div>
+
+    <ul class="limits">
+      <li><b>Scores are relative.</b> 70 means better served than most Sindhi villages, not adequate by any external standard.</li>
+      <li><b>The population indicator barely moves the score</b> (correlation 0.06), and its direction, more people meaning worse access, may be wrong.</li>
+      <li><b>Rainfall is coarse.</b> CHIRPS cells are about 5.5 km and undercount dry-season rain in hyper-arid areas, so Thar's figures are lower bounds.</li>
+      <li><b>River discharge is naturalised.</b> HydroRIVERS models flow before abstraction, so the lower Indus carries less than it shows.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= cite ================= -->
+<section class="sec cite-sec" id="cite">
+  <div class="wrap">
+    <div class="sec-head">
+      <div><div class="eyebrow">Data and citation</div><h2>Use and cite SWAI</h2></div>
+      <p>The full dataset and pipeline are open. Code is MIT-licensed; derived data is for non-commercial research and education, following its sources.</p>
+    </div>
+    <div class="cite-grid">
+      <div>
+        <div class="review">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <div><b>Paper under review</b><p>The paper describing SWAI is in peer review. This page will link to it once it is published. Until then, please cite the dataset.</p></div>
+        </div>
+        <p class="abs">SWAI asks whether open satellite and geospatial data can show village-level water access where household surveys stop at the district. Its main lesson is methodological: the indicator choice that looks standard reverses the answer.</p>
+        <div class="ref-list">
+          <a class="ref" href="https://doi.org/10.5281/zenodo.21422759" target="_blank" rel="noopener">
+            <span class="l"><b>Dataset on Zenodo</b><span>doi.org/10.5281/zenodo.21422759</span></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+          </a>
+          <a class="ref" href="https://github.com/ArsalanKaleem/Sindh-Water-Access-index-SWAI-" target="_blank" rel="noopener">
+            <span class="l"><b>Code and pipeline</b><span>github.com/ArsalanKaleem/Sindh-Water-Access-index-SWAI-</span></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+          </a>
+          <a class="ref" href="https://arsalankaleem.me/Rural-Healthcare-Accessibility-Index--RHAI-/" target="_blank" rel="noopener">
+            <span class="l"><b>Related: RHAI</b><span>Travel time to health facilities, same 5,159 villages</span></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <div class="cbox">
+          <div class="ctabs" role="tablist" aria-label="Citation format">
+            <button type="button" role="tab" data-fmt="apa" aria-selected="true">APA</button>
+            <button type="button" role="tab" data-fmt="chicago" aria-selected="false">Chicago</button>
+            <button type="button" role="tab" data-fmt="bibtex" aria-selected="false">BibTeX</button>
+          </div>
+          <pre class="ctext" id="citeText" role="tabpanel"></pre>
+          <div class="cfoot">
+            <span id="citeFmt">APA 7th edition</span>
+            <button type="button" class="btn sm copy" id="copyCite">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+              Copy</button>
+          </div>
+        </div>
+        <p class="code-cite">Citing the dataset for now. A citation for the paper will be added here when it is published.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <h4>Author</h4>
+        <p style="color:#e9eef0;font-size:15px">Arsalan Kaleem</p>
+        <p><a href="https://arsalankaleem.github.io/portfolio/" target="_blank" rel="noopener">Portfolio</a> · <a href="https://www.linkedin.com/in/arsalankaleem" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/ArsalanKaleem" target="_blank" rel="noopener">GitHub</a></p>
+        <p><a href="mailto:arsalanabbasi.here@gmail.com">arsalanabbasi.here@gmail.com</a></p>
+        <p style="margin-top:10px;max-width:34em">Field data on water access or groundwater salinity in Sindh would be the most valuable addition to this work. Please get in touch.</p>
+      </div>
+      <div>
+        <h4>Data sources</h4>
+        <p>WorldPop (CC BY 4.0) · HydroSHEDS / HydroRIVERS · OpenStreetMap (ODbL) · CHIRPS · Copernicus Sentinel-2 · NASA/USGS SRTM · GADM</p>
+      </div>
+      <div>
+        <h4>Related</h4>
+        <p><a href="https://arsalankaleem.me/Rural-Healthcare-Accessibility-Index--RHAI-/" target="_blank" rel="noopener">RHAI — Rural Healthcare Accessibility Index</a>, road travel time to health facilities for the same villages.</p>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 Arsalan Kaleem · Code MIT · Data for non-commercial use</span>
+      <span>Basemap © OpenStreetMap contributors</span>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+const C={b0:'#9c3b1f',b1:'#e0a83e',b2:'#5fa2c4',b3:'#1f5f8b',sky:'#1f5f8b',ink:'#14202a',naive:'#c0708a',sample:'#6b3fa0'};
+const BAND_COLOUR=[C.b0,C.b1,C.b2,C.b3];
+const IND={
+  score:{label:'Water access score',lo:'0 · least access',hi:'100 · most'},
+  R:{label:'R · distance to river or canal',lo:'0 · far',hi:'100 · close'},
+  W:{label:'W · rainfall',lo:'0 · dry',hi:'100 · wet'},
+  N:{label:'N · surface water',lo:'0 · little',hi:'100 · much'},
+  P:{label:'P · population within 2 km',lo:'0 · crowded',hi:'100 · sparse'},
+  E:{label:'E · elevation',lo:'0 · high',hi:'100 · low'}
+};
+const fmt=n=>n==null?'—':n.toLocaleString();
+const sc=n=>n==null?'—':n.toFixed(1);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+const $=id=>document.getElementById(id);
+const narrow=()=>matchMedia('(max-width:899px)').matches;
+const hoverable=matchMedia('(hover:hover) and (pointer:fine)').matches;
+const PAGE=60;
+const median=a=>{const b=a.filter(x=>x!=null).sort((p,q)=>p-q); if(!b.length) return null; const m=b.length>>1; return b.length%2?b[m]:(b[m-1]+b[m])/2;};
+const mean=a=>{const b=a.filter(x=>x!=null); return b.length?b.reduce((s,x)=>s+x,0)/b.length:null;};
+
+const hidden=new Set();   // score bands switched off in the legend
+let V=[],D=[],META={},VAL={},SAMPLES=null,cur=null,scn='dry',view='dots',colorBy='score',HEX=[],
+    showSamples=false,map,popup,hover,mapReady=false,list=[],shown=0;
+
+/* ---------- score helpers ---------- */
+const sOf=v=>scn==='dry'?v.score:v.naive;
+const wOf=v=>scn==='dry'?v.W:v.Wa;
+const valOf=v=>colorBy==='score'?sOf(v):colorBy==='W'?wOf(v):v[colorBy];
+// bands use the published cut-offs (bottom 20% / median / top 20% of the dry-season score)
+const band=s=>s==null?-1:s<=META.poor_max?0:s<META.median?1:s<META.good_min?2:3;
+const BAND_LABEL=()=>['Poor · bottom 20%','Moderate · lower','Moderate · upper','Good · top 20%'];
+const BAND_RANGE=()=>[`≤ ${META.poor_max}`,`to ${META.median}`,`to ${META.good_min}`,`≥ ${META.good_min}`];
+
+function hex2rgb(h){const n=parseInt(h.slice(1),16);return[n>>16,n>>8&255,n&255];}
+const STOPS=[0,33.3,66.7,100].map((x,i)=>[x,hex2rgb(BAND_COLOUR[i])]);
+function ramp(x){
+  if(x==null) return '#bbb';
+  x=Math.max(0,Math.min(100,x));
+  for(let i=1;i<STOPS.length;i++){
+    if(x<=STOPS[i][0]){
+      const [x0,c0]=STOPS[i-1],[x1,c1]=STOPS[i],t=(x-x0)/(x1-x0);
+      return `rgb(${c0.map((c,k)=>Math.round(c+(c1[k]-c)*t)).join(',')})`;
+    }
+  }
+  return BAND_COLOUR[3];
+}
+const colourOf=v=>colorBy==='score'?(band(sOf(v))<0?'#bbb':BAND_COLOUR[band(sOf(v))]):ramp(valOf(v));
+const visible=v=>colorBy!=='score'||!hidden.has(band(sOf(v)));
+const inDistrict=()=>V.filter(v=>v.district===cur.d);
+
+async function boot(){
+  const [v,m,val]=await Promise.all([
+    fetch('data/villages.json').then(r=>r.json()),
+    fetch('data/meta.json').then(r=>r.json()),
+    fetch('data/validation.json').then(r=>r.json()).catch(()=>({}))
+  ]);
+  META=m; VAL=val;
+  const F=v.fields;
+  V=v.rows.map((r,i)=>{const o={i}; F.forEach((f,k)=>o[f]=r[k]); return o;});
+  // district summaries, ordered worst first by the published (dry-season) mean
+  const by={};
+  V.forEach(x=>(by[x.district]=by[x.district]||[]).push(x));
+  D=Object.entries(by).map(([d,vs])=>({d,n:vs.length,
+      mean:mean(vs.map(x=>x.score)),meanNaive:mean(vs.map(x=>x.naive))}))
+    .sort((a,b)=>a.mean-b.mean);
+  $('metaline').textContent=`${fmt(META.villages)} villages · ${META.districts} districts · data built ${META.generated}`;
+
+  const sel=$('district');
+  sel.innerHTML=D.map(x=>`<option value="${esc(x.d)}">${esc(x.d)}</option>`).join('');
+  sel.addEventListener('change',e=>select(e.target.value));
+
+  inversionCard();
+  buildLegend();
+
+  // ?d=<district>&rain=annual&view=dots|hex|heat&colour=R|W|N|P|E restores a shared view
+  const qs=new URLSearchParams(location.search);
+  initMap();
+  if(qs.get('rain')==='annual') setScn('annual');
+  if(IND[qs.get('colour')]){ colorBy=qs.get('colour'); $('colorBy').value=colorBy; }
+  setView(VIEW_HINT[qs.get('view')]?qs.get('view'):'dots');
+  select(D.some(x=>x.d===qs.get('d'))?qs.get('d'):D[0].d);
+  $('loading').remove();
+}
+
+/* ---------- hero: inversion dumbbells ---------- */
+function inversionCard(){
+  const rankBy=k=>{const s=[...D].sort((a,b)=>b[k]-a[k]); return d=>s.findIndex(x=>x.d===d)+1;};
+  const rNaive=rankBy('meanNaive'), rDry=rankBy('mean');
+  // Mithi plus the districts (10+ villages) whose mean moves most
+  const pick=D.filter(x=>x.n>=10).sort((a,b)=>Math.abs(b.mean-b.meanNaive)-Math.abs(a.mean-a.meanNaive)).slice(0,6);
+  const lo=40,hi=80,pos=x=>`${(Math.max(lo,Math.min(hi,x))-lo)/(hi-lo)*100}%`;
+  $('invRows').innerHTML=`<div class="inv-rows">${pick.map(x=>{
+    const a=x.meanNaive,b=x.mean,l=Math.min(a,b),r=Math.max(a,b);
+    return `<div class="inv-row"><span class="nm">${x.d==='Mithi'?'<b>Mithi</b>':esc(x.d)}</span>
+      <div class="track" title="${esc(x.d)}: ${sc(a)} with annual rainfall, ${sc(b)} with dry-season rainfall">
+        <span class="seg-l" style="left:${pos(l)};width:calc(${pos(r)} - ${pos(l)});background:${b<a?C.b0:C.b3}"></span>
+        <i class="pt naive" style="left:${pos(a)}"></i><i class="pt dry" style="left:${pos(b)}"></i>
+      </div></div>`;}).join('')}</div>
+    <div class="axis"><span></span><div><span>40</span><span>50</span><span>60</span><span>70</span><span>80</span></div></div>`;
+  const m=D.find(x=>x.d==='Mithi');
+  if(m) $('invFoot').innerHTML=`Mithi ranks <b>${rNaive('Mithi')} of ${D.length}</b> with annual rainfall and <b>${rDry('Mithi')} of ${D.length}</b> with dry-season rainfall.`;
+}
+
+/* ---------- map ---------- */
+function initMap(){
+  map=new maplibregl.Map({
+    container:'map',
+    style:{version:8,sources:{
+      base:{type:'raster',tileSize:256,tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}},
+      layers:[{id:'base',type:'raster',source:'base',paint:{'raster-saturation':-0.9,'raster-opacity':0.45,'raster-contrast':-0.1}}]},
+    center:[68.6,26.2],zoom:5.6,attributionControl:{compact:true},
+    cooperativeGestures:true
+  });
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
+  map.addControl(new maplibregl.FullscreenControl(),'top-right');
+  map.addControl(new ButtonControl([
+    {title:'Zoom to district',run:()=>fit(true),
+     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><circle cx="12" cy="12" r="2.5"/></svg>'},
+    // the basemap's roads and Urdu labels can crowd the dots; let people switch it off
+    {title:'Hide basemap',run:btn=>{
+       const off=map.getLayoutProperty('base','visibility')!=='none';
+       map.setLayoutProperty('base','visibility',off?'none':'visible');
+       btn.setAttribute('aria-pressed',off);
+       btn.title=off?'Show basemap':'Hide basemap'; btn.setAttribute('aria-label',btn.title);
+     },
+     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg>'}
+  ]),'top-right');
+  popup=new maplibregl.Popup({closeButton:true,maxWidth:'290px',offset:8});
+  popup.on('close',()=>mark(null));
+  hover=new maplibregl.Popup({closeButton:false,closeOnClick:false,className:'hover-tip',offset:10});
+
+  map.on('load',()=>{
+    map.addSource('ext',{type:'geojson',data:fc([])});
+    map.addLayer({id:'ext',type:'line',source:'ext',paint:{
+      'line-color':C.ink,'line-opacity':.55,'line-width':1.3,'line-dasharray':[3,2]}});
+    map.addSource('h',{type:'geojson',data:fc([])});
+    map.addLayer({id:'h',type:'fill',source:'h',paint:{'fill-color':['get','c'],'fill-opacity':.82}});
+    map.addLayer({id:'h-line',type:'line',source:'h',paint:{'line-color':'#fff','line-width':1.2}});
+    map.addSource('heat',{type:'geojson',data:fc([])});
+    map.addLayer({id:'heat',type:'heatmap',source:'heat',paint:{
+      'heatmap-weight':['get','w'],
+      'heatmap-intensity':['interpolate',['linear'],['zoom'],6,1.4,12,3],
+      'heatmap-radius':['interpolate',['linear'],['zoom'],6,20,9,36,12,70],
+      'heatmap-opacity':['interpolate',['linear'],['zoom'],6,.9,13,.75],
+      'heatmap-color':['interpolate',['linear'],['heatmap-density'],
+        0,'rgba(224,168,62,0)',.15,'rgba(224,168,62,.55)',.45,C.b0,.8,'#6e2410',1,'#4a1408']}});
+    map.addSource('v-src',{type:'geojson',data:fc([])});
+    // soft dark halo under each dot so it reads against the grey basemap
+    map.addLayer({id:'v-halo',type:'circle',source:'v-src',paint:{
+      'circle-radius':['interpolate',['linear'],['zoom'],6,6.25,9,8.25,12,11.75],
+      'circle-color':'rgba(20,32,42,.28)','circle-blur':.6}});
+    map.addLayer({id:'v',type:'circle',source:'v-src',paint:{
+      'circle-radius':['interpolate',['linear'],['zoom'],6,4.5,9,6.5,12,10],
+      'circle-color':['get','c'],'circle-stroke-width':1.5,'circle-stroke-color':'#fff'}});
+    map.addSource('sel',{type:'geojson',data:fc([])});
+    map.addLayer({id:'sel',type:'circle',source:'sel',paint:{
+      'circle-radius':['interpolate',['linear'],['zoom'],6,10,12,17],
+      'circle-color':'rgba(0,0,0,0)','circle-stroke-width':2.5,'circle-stroke-color':C.ink}});
+    map.addSource('s',{type:'geojson',data:fc([])});
+    map.addLayer({id:'s',type:'circle',source:'s',paint:{
+      'circle-radius':['interpolate',['linear'],['zoom'],6,4,11,7,14,9],
+      'circle-color':'#fff','circle-stroke-width':2.5,'circle-stroke-color':C.sample}});
+
+    map.on('click','v',e=>showPopup(V[e.features[0].properties.i]));
+    map.on('click','h',e=>showHex(HEX[e.features[0].properties.k],e.lngLat));
+    map.on('click','s',e=>showSample(SAMPLES[e.features[0].properties.k]));
+    ['h','s'].forEach(l=>{
+      map.on('mouseenter',l,()=>map.getCanvas().style.cursor='pointer');
+      map.on('mouseleave',l,()=>map.getCanvas().style.cursor='');
+    });
+    map.on('mousemove','v',e=>{
+      map.getCanvas().style.cursor='pointer';
+      if(!hoverable) return;
+      const v=V[e.features[0].properties.i];
+      hover.setLngLat([v.lon,v.lat]).setHTML(
+        `<span dir="auto">${esc(v.name||'Unnamed village')}</span> · <b class="mono">${sc(sOf(v))}</b>`).addTo(map);
+    });
+    map.on('mouseleave','v',()=>{ map.getCanvas().style.cursor=''; hover.remove(); });
+    mapReady=true;
+    if(cur){ draw(); fit(false); }
+  });
+
+  document.querySelectorAll('[data-scn]').forEach(b=>b.addEventListener('click',()=>{
+    if(scn===b.dataset.scn) return;
+    setScn(b.dataset.scn);
+    popup.remove();
+    render();
+  }));
+  document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
+  $('colorBy').addEventListener('change',e=>{
+    colorBy=e.target.value;
+    buildLegend(); draw(); renderList(); syncURL();
+  });
+  $('toggleSamples').addEventListener('click',async e=>{
+    const btn=e.currentTarget;
+    showSamples=!showSamples;
+    btn.setAttribute('aria-pressed',showSamples);
+    $('legend').classList.toggle('show-samples',showSamples);
+    if(showSamples&&!SAMPLES){
+      try{ SAMPLES=await fetch('data/samples.json').then(r=>r.json()); }
+      catch(err){ SAMPLES=[]; }
+    }
+    if(showSamples&&cur.d!=='Thatta') toast('The 21 samples are around Thatta. Pick Thatta to see them up close.');
+    drawSamples();
+  });
+  $('search').addEventListener('input',()=>renderList());
+  $('moreBtn').addEventListener('click',()=>renderRows(shown+PAGE));
+  $('download').addEventListener('click',csv);
+}
+
+const fc=f=>({type:'FeatureCollection',features:f});
+
+// a group of plain icon buttons styled like MapLibre's own controls
+class ButtonControl{
+  constructor(btns){ this.btns=btns; }
+  onAdd(){
+    const el=document.createElement('div');
+    el.className='maplibregl-ctrl maplibregl-ctrl-group';
+    this.btns.forEach(b=>{
+      const x=document.createElement('button');
+      x.type='button'; x.className='ctl-btn'; x.title=b.title; x.setAttribute('aria-label',b.title);
+      x.innerHTML=b.icon; x.addEventListener('click',()=>b.run(x));
+      el.appendChild(x);
+    });
+    return el;
+  }
+  onRemove(){}
+}
+
+function setScn(k){
+  scn=k;
+  document.querySelectorAll('[data-scn]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.scn===k));
+  $('legScn').textContent = k==='annual' ? 'Annual rainfall · naive, for comparison' : 'Dry-season rainfall · as published';
+}
+
+const VIEW_HINT={
+  dots:'Each dot is a village, coloured by its score or the chosen indicator.',
+  hex:'Villages grouped into hexagons, coloured by their median.',
+  heat:'Where Poor-band villages cluster, weighted by people living within 2 km.'
+};
+
+function setView(k){
+  view=k;
+  document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===k));
+  $('viewHint').textContent=VIEW_HINT[k];
+  popup&&popup.remove();
+  buildLegend(); draw(); syncURL();
+}
+
+function buildLegend(){
+  const heat=view==='heat', isScore=colorBy==='score';
+  const lg=$('legend');
+  lg.classList.toggle('mode-ramp',heat||!isScore);
+  $('legRamp').classList.toggle('heat',heat);
+  if(heat){
+    $('legT').textContent='Poor-band villages';
+    $('legLo').textContent='few people'; $('legHi').textContent='many';
+  }else if(!isScore){
+    $('legT').textContent=IND[colorBy].label+(view==='hex'?' · median':'');
+    $('legLo').textContent=IND[colorBy].lo; $('legHi').textContent=IND[colorBy].hi;
+  }else{
+    $('legT').innerHTML=`Water access score${view==='hex'?' · median':''} <span class="hint">· tap to filter</span>`;
+    const L=BAND_LABEL(),R=BAND_RANGE();
+    $('legBands').innerHTML=L.map((l,k)=>`<button type="button" class="k band" data-band="${k}" aria-pressed="${!hidden.has(k)}">
+      <span class="dot" style="background:${BAND_COLOUR[k]}"></span>${l}<span class="rng">${R[k]}</span></button>`).join('');
+    $('legBands').querySelectorAll('.band').forEach(b=>b.addEventListener('click',()=>{
+      const k=+b.dataset.band;
+      hidden.has(k)?hidden.delete(k):hidden.add(k);
+      b.setAttribute('aria-pressed',!hidden.has(k));
+      draw(); renderList();
+    }));
+  }
+}
+
+function select(name){
+  cur=D.find(x=>x.d===name);
+  $('district').value=name;
+  $('search').value='';
+  if(popup) popup.remove();
+  render();
+  fit(true);
+}
+
+function syncURL(){
+  if(!cur) return;
+  const q=new URLSearchParams({d:cur.d});
+  if(scn!=='dry') q.set('rain',scn);
+  if(view!=='dots') q.set('view',view);
+  if(colorBy!=='score') q.set('colour',colorBy);
+  history.replaceState(null,'',`?${q}${location.hash}`);
+}
+
+function fit(animate){
+  if(!mapReady) return;
+  const pts=inDistrict();
+  if(!pts.length) return;
+  const b=new maplibregl.LngLatBounds();
+  pts.forEach(p=>b.extend([p.lon,p.lat]));
+  map.fitBounds(b,{padding:narrow()?36:64,maxZoom:11,duration:animate?600:0});
+}
+
+function render(){ readout(); draw(); renderList(); syncURL(); }
+
+/* ---------- readout ---------- */
+function rankOf(d){
+  const k=scn==='dry'?'mean':'meanNaive';
+  return [...D].sort((a,b)=>b[k]-a[k]).findIndex(x=>x.d===d)+1;
+}
+
+function distBar(vs){
+  const tot=[0,0,0,0];
+  vs.forEach(v=>{const b=band(sOf(v)); if(b>=0) tot[b]++;});
+  const sum=tot.reduce((a,b)=>a+b,0)||1, pct=tot.map(x=>100*x/sum);
+  const show=p=>p>0&&p<1?'<1':Math.round(p);
+  const L=['Poor','Moderate −','Moderate +','Good'];
+  return `<div class="dist-h">Share of villages by band</div>
+    <div class="dist" role="img" aria-label="${pct.map((p,i)=>`${L[i]}: ${show(p)}%`).join(', ')}">
+      ${pct.map((p,i)=>p?`<span style="width:${p}%;background:${BAND_COLOUR[i]}"></span>`:'').join('')}</div>
+    <div class="dist-l">${pct.map((p,i)=>`<span><i class="dot" style="background:${BAND_COLOUR[i]}"></i>${L[i]}<b class="mono">${show(p)}%</b></span>`).join('')}</div>`;
+}
+
+function readout(){
+  const d=cur, vs=inDistrict(), A=scn==='annual';
+  const med=median(vs.map(sOf)), mn=A?d.meanNaive:d.mean;
+  const poor=vs.filter(v=>band(sOf(v))===0).length;
+  const val=VAL[d.d];
+  $('readout').innerHTML=`
+    <p class="lede">In <b>${esc(d.d)}</b>, the typical village scores</p>
+    <div class="big">${sc(med)}<small>out of 100</small></div>
+    <div class="sub">Mean ${sc(mn)} · rank ${rankOf(d.d)} of ${D.length} districts (1 = best served) · ${fmt(d.n)} villages</div>
+    ${distBar(vs)}
+    <div class="stats">
+      <div class="stat"><div class="k">Poor-band villages</div><div class="v">${Math.round(100*poor/vs.length)}<small>%</small></div></div>
+      <div class="stat"><div class="k">To river or canal</div><div class="v">${sc(median(vs.map(v=>v.dist_km)))}<small> km</small></div></div>
+      <div class="stat"><div class="k">Dry-season rain</div><div class="v">${Math.round(median(vs.map(v=>v.dry_mm)))}<small> mm</small></div></div>
+      <div class="stat"><div class="k">Annual rain</div><div class="v">${Math.round(median(vs.map(v=>v.rain_mm)))}<small> mm</small></div></div>
+    </div>
+    ${val?`<div class="flag"><b>Accessible is not safe.</b> Published studies found ${val.unsafe}% of
+      water samples in ${esc(d.d)} unsafe to drink. This index has no salinity data and cannot see that.</div>`:''}
+    ${A?`<div class="flag info"><b>Annual rainfall (naive).</b> Counts monsoon rain that is long gone by the dry
+      months, which flatters Tharparkar and the coast. Shown for comparison with the published index.</div>`:''}
+    ${d.n<10?`<div class="flag info"><b>Only ${d.n} village${d.n===1?'':'s'} mapped here.</b> Treat district figures with caution.</div>`:''}`;
+}
+
+/* ---------- drawing ---------- */
+function draw(){
+  if(!mapReady)return;
+  const pts=inDistrict().filter(visible);
+  map.getSource('v-src').setData(fc(view!=='dots'?[]:pts.map(v=>({type:'Feature',geometry:{type:'Point',coordinates:[v.lon,v.lat]},
+    properties:{c:colourOf(v),i:v.i}}))));
+  map.getSource('h').setData(fc(view==='hex'?hexFeatures(pts):[]));
+  const hull=convexHull(inDistrict().map(v=>[v.lon,v.lat]));
+  map.getSource('ext').setData(fc(hull.length>2?[{type:'Feature',geometry:{type:'LineString',coordinates:[...hull,hull[0]]},properties:{}}]:[]));
+  const heat=view==='heat'?heatFeatures():[];
+  map.getSource('heat').setData(fc(heat));
+  drawSamples();
+  // say why the map is empty instead of leaving a blank canvas
+  const note = view==='heat'&&!heat.length
+      ? `No village in ${cur.d} falls in the Poor band with this rainfall measure.`
+    : view!=='heat'&&!pts.length&&hidden.size
+      ? 'Every score band shown here is switched off. Tap one in the legend to bring it back.'
+    : '';
+  $('mapNote').textContent=note;
+  $('mapNote').hidden=!note;
+}
+
+function drawSamples(){
+  if(!mapReady) return;
+  map.getSource('s').setData(fc(showSamples&&SAMPLES?SAMPLES.map((s,k)=>({type:'Feature',
+    geometry:{type:'Point',coordinates:[s.lon,s.lat]},properties:{k}})):[]));
+}
+
+// weight = people within 2 km, only for Poor-band villages, scaled to the district's largest
+function heatFeatures(){
+  const poor=inDistrict().filter(v=>band(sOf(v))===0);
+  const top=Math.max(1,...poor.map(v=>v.pop2km||0));
+  return poor.map(v=>({type:'Feature',geometry:{type:'Point',coordinates:[v.lon,v.lat]},
+    properties:{w:Math.max(.15,Math.sqrt((v.pop2km||0)/top))}}));   // sqrt keeps small villages visible
+}
+
+function hexFeatures(pts){
+  if(!pts.length){ HEX=[]; return []; }
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  pts.forEach(p=>{x0=Math.min(x0,p.lon);x1=Math.max(x1,p.lon);y0=Math.min(y0,p.lat);y1=Math.max(y1,p.lat)});
+  // hexagon size scales with the district so each has a handful of villages
+  const diag=Math.hypot((x1-x0)*101,(y1-y0)*110.6);
+  const r=Math.min(12,Math.max(2.5,diag/16));
+  HEX=hexbin(pts,r).map(b=>({...b,
+    med:median(b.pts.map(sOf)), val:median(b.pts.map(valOf)),
+    poor:b.pts.filter(v=>band(sOf(v))===0).length}));
+  return HEX.map((h,k)=>({type:'Feature',geometry:{type:'Polygon',coordinates:[h.ring]},
+    properties:{c:colorBy==='score'?BAND_COLOUR[band(h.med)]||'#bbb':ramp(h.val),k}}));
+}
+
+/* ---------- popups ---------- */
+function mark(v){
+  if(!mapReady) return;
+  map.getSource('sel').setData(fc(v?[{type:'Feature',geometry:{type:'Point',coordinates:[v.lon,v.lat]},properties:{}}]:[]));
+}
+
+function ibar(sym,x,c){ return `<div class="ibar"><b>${sym}</b><i style="--w:${x??0}%;--c:${c}"></i><span>${x??'—'}</span></div>`; }
+
+function showPopup(v){
+  hover.remove();
+  const s=sOf(v), b=band(s), lab=['Poor','Moderate','Moderate','Good'][b]||'';
+  popup.setLngLat([v.lon,v.lat]).setHTML(`
+    <div class="pop-n" dir="auto">${esc(v.name||'Unnamed village')}</div>
+    <div class="pop-s"><span class="mono">${sc(s)}</span><span style="color:var(--muted);font-size:12px">/ 100</span>
+      ${b>=0?`<span class="tag" style="background:${BAND_COLOUR[b]}">${lab}</span>`:''}</div>
+    <div class="pop-cap">Indicators, 0–100 (higher = better access)</div>
+    <div class="ibars">
+      ${ibar('R',v.R,ramp(v.R))}${ibar('W',wOf(v),ramp(wOf(v)))}${ibar('N',v.N,ramp(v.N))}${ibar('P',v.P,ramp(v.P))}${ibar('E',v.E,ramp(v.E))}
+    </div>
+    <div class="pop-r"><span>${scn==='dry'?'With annual rainfall':'With dry-season rainfall'}</span><span class="mono">${sc(scn==='dry'?v.naive:v.score)}</span></div>
+    <div class="pop-r"><span>Nearest river or canal</span><span class="mono">${sc(v.dist_km)} km</span></div>
+    <div class="pop-r"><span>Rain, Nov–May / year</span><span class="mono">${v.dry_mm==null?'—':Math.round(v.dry_mm)} / ${fmt(v.rain_mm)} mm</span></div>
+    <div class="pop-r"><span>Elevation</span><span class="mono">${fmt(v.elev_m)} m</span></div>
+    ${v.pop2km?`<div class="pop-r"><span>People within 2 km</span><span class="mono">${fmt(v.pop2km)}</span></div>`:''}
+  `).addTo(map);
+  mark(v);   // after addTo: reopening fires 'close', which clears the ring
+}
+
+function showHex(h,at){
+  hover.remove(); mark(null);
+  const low=h.pts.filter(v=>v.name).sort((a,b)=>(sOf(a)??999)-(sOf(b)??999));
+  popup.setLngLat(at).setHTML(`
+    <div class="pop-n">${fmt(h.pts.length)} village${h.pts.length===1?'':'s'} in this hexagon</div>
+    <div class="pop-r"><span>Median score</span><span class="mono">${sc(h.med)}</span></div>
+    ${colorBy!=='score'?`<div class="pop-r"><span>Median ${colorBy}</span><span class="mono">${h.val==null?'—':Math.round(h.val)}</span></div>`:''}
+    <div class="pop-r"><span>Poor-band villages</span><span class="mono">${h.poor}</span></div>
+    ${low.length?`<div class="pop-r"><span>Lowest</span><span dir="auto">${esc(low[0].name)} · <span class="mono">${sc(sOf(low[0]))}</span></span></div>`:''}
+  `).addTo(map);
+}
+
+function showSample(s){
+  hover.remove(); mark(null);
+  popup.setLngLat([s.lon,s.lat]).setHTML(`
+    <div class="pop-n">${esc(s.place)} <span style="color:var(--muted);font-size:12px">${esc(s.code)}</span></div>
+    <div class="pop-cap">Groundwater sample, Thatta (Zenodo 15033704)</div>
+    <div class="pop-r"><span>Total dissolved solids</span><span class="mono">${fmt(s.tds)} mg/L</span></div>
+    <div class="pop-r"><span>Chloride</span><span class="mono">${fmt(s.cl)} mg/L</span></div>
+    <div class="pop-r"><span>Taste</span><span>${esc(s.taste)}</span></div>
+    <div class="pop-r"><span>Bacteria</span><span>${esc(s.bact)}</span></div>
+    <div class="pop-cap" style="margin-top:6px">Above the 500 mg/L TDS limit, like all 21 samples.</div>
+  `).addTo(map);
+}
+
+/* ---------- list ---------- */
+function renderList(){
+  const q=$('search').value.trim().toLowerCase();
+  list=inDistrict().filter(visible);
+  if(q) list=list.filter(v=>(v.name||'').toLowerCase().includes(q));
+  list.sort((a,b)=>(sOf(a)??999)-(sOf(b)??999));
+  $('vcount').textContent=`${fmt(list.length)} village${list.length===1?'':'s'}${hidden.size&&colorBy==='score'?' · filtered':''}`;
+  renderRows(PAGE);
+}
+
+function renderRows(n){
+  shown=Math.min(n,list.length);
+  $('rows').innerHTML=list.slice(0,shown).map(v=>{
+    const s=sOf(v);
+    return `<button type="button" class="row" data-i="${v.i}">
+      <span style="min-width:0"><span class="nm"><span class="dot" style="background:${colourOf(v)}"></span><span dir="auto">${esc(v.name||'Unnamed village')}</span></span>
+      <span class="pp">${sc(v.dist_km)} km to water · ${v.dry_mm==null?'—':Math.round(v.dry_mm)} mm dry-season rain</span></span>
+      <span class="tt">${sc(s)}<span> /100</span></span>
+    </button>`}).join('') || `<div class="empty">No village matches that name in ${esc(cur.d)}.</div>`;
+  const left=list.length-shown;
+  $('more').hidden=left<=0;
+  $('moreBtn').textContent=`Show ${Math.min(PAGE,left)} more`;
+  $('rows').querySelectorAll('.row').forEach(el=>el.addEventListener('click',()=>{
+    const v=V[+el.dataset.i];
+    if(narrow()) $('map').scrollIntoView({behavior:'smooth',block:'center'});
+    map.flyTo({center:[v.lon,v.lat],zoom:12,duration:700});
+    map.once('moveend',()=>showPopup(v));
+  }));
+}
+
+function csv(){
+  const rows=inDistrict().sort((a,b)=>(a.score??999)-(b.score??999));
+  const head='village_id,name,district,lon,lat,water_access_score,score_annual_rainfall,R,P,W,N,E,river_canal_km,dry_rain_mm,annual_rain_mm,elevation_m,pop_within_2km';
+  const body=rows.map(v=>[v.id,`"${(v.name||'').replace(/"/g,'""')}"`,v.district,v.lon,v.lat,
+    v.score??'',v.naive??'',v.R??'',v.P??'',v.W??'',v.N??'',v.E??'',v.dist_km??'',v.dry_mm??'',v.rain_mm??'',v.elev_m??'',v.pop2km??''].join(',')).join('\n');
+  const blob=new Blob(['﻿'+head+'\n'+body],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`SWAI_${cur.d.replace(/\W+/g,'_')}.csv`;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+/* ---------- geometry ---------- */
+// Andrew's monotone chain; outlines the area the district's villages cover
+function convexHull(p){
+  p=[...p].sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  if(p.length<3) return p;
+  const x=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+  const lo=[],up=[];
+  for(const q of p){ while(lo.length>1&&x(lo[lo.length-2],lo[lo.length-1],q)<=0) lo.pop(); lo.push(q); }
+  for(const q of p.reverse()){ while(up.length>1&&x(up[up.length-2],up[up.length-1],q)<=0) up.pop(); up.push(q); }
+  return lo.slice(0,-1).concat(up.slice(0,-1));
+}
+
+// Group villages into pointy-top hexagons of circumradius r km, using a local
+// equirectangular projection centred on the points (fine at district scale).
+function hexbin(pts,r){
+  const lat0=pts.reduce((a,p)=>a+p.lat,0)/pts.length*Math.PI/180;
+  const kx=111.32*Math.cos(lat0), ky=110.57, S3=Math.sqrt(3);
+  const bins=new Map();
+  for(const p of pts){
+    const x=p.lon*kx, y=p.lat*ky;
+    const fq=(S3/3*x-y/3)/r, fr=(2/3*y)/r, fs=-fq-fr;
+    let q=Math.round(fq), rr=Math.round(fr), ss=Math.round(fs);
+    const dq=Math.abs(q-fq), dr=Math.abs(rr-fr), ds=Math.abs(ss-fs);
+    if(dq>dr&&dq>ds) q=-rr-ss; else if(dr>ds) rr=-q-ss;
+    const key=q+','+rr;
+    if(!bins.has(key)) bins.set(key,{q,r:rr,pts:[]});
+    bins.get(key).pts.push(p);
+  }
+  return [...bins.values()].map(b=>{
+    const cx=r*S3*(b.q+b.r/2), cy=r*1.5*b.r, ring=[];
+    for(let i=0;i<=6;i++){
+      const a=Math.PI/180*(60*i+30);
+      ring.push([(cx+r*Math.cos(a))/kx,(cy+r*Math.sin(a))/ky]);
+    }
+    return {ring,pts:b.pts};
+  });
+}
+
+/* ---------- citation ---------- */
+const TITLE='Sindh Water Access Index: Village-level drinking-water accessibility from open geospatial data';
+const DOI='https://doi.org/10.5281/zenodo.21422759';
+const CITE={
+  apa:{label:'APA 7th edition · dataset',html:`Kaleem, A. (2026). <i>${TITLE}</i> [Data set]. Zenodo. ${DOI}`},
+  chicago:{label:'Chicago author-date · dataset',html:`Kaleem, Arsalan. 2026. “Sindh Water Access Index: Village-Level Drinking-Water Accessibility from Open Geospatial Data.” Dataset. Zenodo. ${DOI}.`},
+  bibtex:{label:'BibTeX · dataset',code:true,html:esc(`@misc{kaleem2026swai,
+  author    = {Kaleem, Arsalan},
+  title     = {Sindh Water Access Index: Village-Level Drinking-Water
+               Accessibility from Open Geospatial Data},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.21422759},
+  url       = {${DOI}}
+}`)}
+};
+function showCite(k){
+  const c=CITE[k];
+  document.querySelectorAll('[data-fmt]').forEach(b=>b.setAttribute('aria-selected',b.dataset.fmt===k));
+  $('citeText').innerHTML=c.html;
+  $('citeText').classList.toggle('code',!!c.code);
+  $('citeFmt').textContent=c.label;
+}
+document.querySelectorAll('[data-fmt]').forEach(b=>b.addEventListener('click',()=>showCite(b.dataset.fmt)));
+$('copyCite').addEventListener('click',async()=>{
+  const text=$('citeText').textContent;
+  try{ await navigator.clipboard.writeText(text); }
+  catch(e){
+    const r=document.createRange(); r.selectNodeContents($('citeText'));
+    const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+    document.execCommand('copy');
+  }
+  toast('Citation copied');
+});
+let toastT;
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),2600);
+}
+showCite('apa');
+
+boot().catch(e=>{
+  $('loading').textContent='Could not load the data files. Run scripts/build_web.py first.';
+  console.error(e);
+});
+</script>
+</body>
+</html>
