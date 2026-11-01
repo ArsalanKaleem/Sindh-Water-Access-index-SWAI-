@@ -4,7 +4,9 @@
 
 **Village-level drinking-water accessibility for 5,159 villages across Sindh, Pakistan — estimated entirely from open satellite and geospatial data.**
 
-![District ranking](fig2_districts.png)
+![District ranking](figures/fig2_districts.png)
+
+**[Open the district explorer](https://arsalankaleem.me/Sindh-Water-Access-index-SWAI-/)**: every village's score on a map, with its five indicators.
 
 ---
 
@@ -92,7 +94,7 @@ Bands are assigned by percentile (bottom 20% / middle 60% / top 20%), not by abs
 
 ## Key finding: annual rainfall inverts the ranking
 
-![Seasonality](fig3_seasonality.png)
+![Seasonality](figures/fig3_seasonality.png)
 
 The standard approach — used in most published water-index work — treats **annual** rainfall as a water-supply indicator. In Sindh this produces a ranking that is not merely noisy but **backwards**.
 
@@ -186,6 +188,22 @@ The index has now been checked against independent field data at two scales (see
 **88.6% of Sindh's villages have a canal, not a natural river, as their nearest perennial water source** (4,573 canals vs 586 rivers). Any index for Sindh that uses only natural hydrography is measuring the wrong thing for nine villages in ten.
 
 Filtering HydroRIVERS by discharge was equally consequential. Unfiltered, the median village's "nearest river" carried **0.026 m³/s — 26 litres per second**, an ephemeral desert wash. The index was measuring distance-to-ditch. Restricting to `> 1 m³/s` retained 770 of 6,358 segments.
+
+---
+
+## District explorer
+
+An interactive site lives in `docs/` and is served by GitHub Pages.
+
+- Pick a district to see its median score, band split, rank and rainfall contrast
+- Switch between **dry-season** rainfall (the published index) and **annual** rainfall
+  (the naive version) to watch the inversion happen village by village
+- Three map views (villages, hexagons, heatmap of Poor-band villages) and colouring
+  by any of the five indicators
+- Overlay the 21 Thatta groundwater samples; download a district CSV
+- Links keep the view, e.g. `?d=Mithi&rain=annual&view=hex`
+
+`python scripts/build_web.py` regenerates the site's data files from `data/`.
 
 ---
 
